@@ -1,0 +1,293 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(STUDENT)
+  timezone      String    @default("America/New_York")
+  
+  // Preferences
+  studyHoursPerDay    Float   @default(4)
+  preferredStudyStart String  @default("09:00")
+  preferredStudyEnd   String  @default("22:00")
+  breakDuration       Int     @default(15) // minutes
+  
+  accounts        Account[]
+  sessions        Session[]
+  calendarSources CalendarSource[]
+  events          CalendarEvent[]
+  tasks           Task[]
+  chatMessages    ChatMessage[]
+  scheduleBlocks  ScheduleBlock[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model CalendarSource {
+  id          String           @id @default(cuid())
+  userId      String
+  name        String
+  type        CalendarType
+  color       String           @default("#4285F4")
+  enabled     Boolean          @default(true)
+  
+  // Connection details
+  icalUrl     String?          @db.Text  // For ICS/iCal feeds
+  apiToken    String?          @db.Text  // Encrypted API token
+  username    String?                     // For LMS login
+  password    String?          @db.Text  // Encrypted password
+  baseUrl     String?                     // LMS base URL
+  
+  // Webhook tracking
+  webhookId         String?
+  webhookExpiry     DateTime?
+  webhookChannelId  String?
+  
+  // Sync status
+  lastSyncAt        DateTime?
+  lastSyncStatus    SyncStatus @default(NEVER)
+  lastSyncError     String?    @db.Text
+  syncIntervalMin   Int        @default(30)
+  
+  // Scraping config (LLM-generated steps)
+  scrapeConfig      Json?      // LLM-generated scraping instructions
+  
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events CalendarEvent[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  sourceId    String
+  
+  // Event details
+  externalId  String?           // ID from source system
+  title       String
+  description String?           @db.Text
+  location    String?
+  url         String?           @db.Text
+  
+  // Timing
+  startTime   DateTime
+  endTime     DateTime
+  allDay      Boolean           @default(false)
+  recurring   Boolean           @default(false)
+  recurrence  String?           // RRULE string
+  
+  // Classification
+  eventType   EventType         @default(OTHER)
+  priority    Priority          @default(MEDIUM)
+  color       String?
+  
+  // Task relationship
+  task        Task?
+  
+  // Metadata
+  rawData     Json?             // Original event data
+  
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source CalendarSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([sourceId, externalId])
+  @@index([userId, startTime])
+  @@index([sourceId])
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  userId      String
+  eventId     String   @unique
+  
+  // Task details
+  title       String
+  description String?  @db.Text
+  courseName  String?
+  
+  // Due date and complexity
+  dueDate     DateTime
+  estimatedMinutes  Int       @default(60)
+  complexityScore   Float     @default(0.5) // 0-1 scale
+  complexityReason  String?   @db.Text      // LLM explanation
+  
+  // Status
+  status      TaskStatus  @default(TODO)
+  progress    Float       @default(0)       // 0-100%
+  
+  // Schedule blocks for this task
+  scheduleBlocks ScheduleBlock[]
+  
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId, dueDate])
+  @@index([userId, status])
+}
+
+model ScheduleBlock {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String?
+  
+  // Block details
+  title     String
+  type      BlockType
+  startTime DateTime
+  endTime   DateTime
+  
+  // Status
+  completed Boolean  @default(false)
+  skipped   Boolean  @default(false)
+  
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId, startTime])
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  userId    String
+  role      ChatRole
+  content   String      @db.Text
+  
+  // If the message resulted in actions
+  actions   Json?       // Actions taken by LLM
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId, createdAt])
+}
+
+// Enums
+enum UserRole {
+  STUDENT
+  PROFESSIONAL
+  OTHER
+}
+
+enum CalendarType {
+  GOOGLE
+  OUTLOOK
+  BLACKBOARD
+  MOODLE
+  CANVAS
+  ICAL
+  MANUAL
+}
+
+enum SyncStatus {
+  NEVER
+  SUCCESS
+  PARTIAL
+  ERROR
+  SYNCING
+}
+
+enum EventType {
+  CLASS
+  ASSIGNMENT
+  EXAM
+  MEETING
+  OFFICE_HOURS
+  STUDY_SESSION
+  BREAK
+  PERSONAL
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+  CANCELLED
+}
+
+enum BlockType {
+  STUDY
+  HOMEWORK
+  EXAM_PREP
+  BREAK
+  CLASS
+  MEETING
+  PERSONAL
+  BUFFER
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
