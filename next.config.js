@@ -9,6 +9,12 @@ const withPWA = require("next-pwa")({
 const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["cheerio", "node-ical"],
+  experimental: {
+    instrumentationHook: false,
+  },
+  // Disable tracing in development
+  trailingSlash: false,
+  generateEtags: false,
 };
 
 module.exports = withPWA(nextConfig);

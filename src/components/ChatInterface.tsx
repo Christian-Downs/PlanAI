@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { Send, Loader2, Sparkles, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -17,6 +19,8 @@ interface Message {
 
 export function ChatInterface() {
   const { isChatOpen, setChatOpen } = useAppStore();
+  const { data: session } = useSession();
+  const pathname = usePathname();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -140,6 +144,9 @@ export function ChatInterface() {
       setIsLoading(false);
     }
   };
+
+  // Don't show chat interface on the landing page (unauthenticated)
+  if (pathname === "/" && !session) return null;
 
   // Floating chat button when closed
   if (!isChatOpen) {

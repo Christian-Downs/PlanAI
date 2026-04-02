@@ -1,13 +1,77 @@
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import AzureADProvider from "next-auth/providers/azure-ad";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "./prisma";
 import { CalendarType, SyncStatus } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        action: { label: "Action", type: "hidden" } // "login" or "register"
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password required");
+        }
+
+        const { email, password, action } = credentials;
+
+        if (action === "register") {
+          // Check if user already exists
+          const existingUser = await prisma.user.findUnique({
+            where: { email }
+          });
+
+          if (existingUser) {
+            throw new Error("User already exists with this email");
+          }
+
+          // Create new user
+          const hashedPassword = await bcrypt.hash(password, 12);
+          const user = await prisma.user.create({
+            data: {
+              email,
+              password: hashedPassword,
+              name: email.split("@")[0], // Use email prefix as default name
+            }
+          });
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
+        } else {
+          // Login
+          const user = await prisma.user.findUnique({
+            where: { email }
+          });
+
+          if (!user || !user.password) {
+            throw new Error("No user found with this email");
+          }
+
+          const isValid = await bcrypt.compare(password, user.password);
+          if (!isValid) {
+            throw new Error("Invalid password");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
+        }
+      }
+    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
