@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { EventType } from "@prisma/client";
 import { createChatStream } from "@/lib/openai";
 import { format, addMinutes } from "date-fns";
 
@@ -297,13 +298,13 @@ function getBlockTypeColor(type: string): string {
   return colors[type] || "#6b7280";
 }
 
-function mapBlockTypeToEventType(type: string): string {
-  const mapping: Record<string, string> = {
-    STUDY: "STUDY_SESSION",
-    HOMEWORK: "ASSIGNMENT",
-    EXAM_PREP: "EXAM",
-    BREAK: "BREAK",
-    BUFFER: "OTHER",
+function mapBlockTypeToEventType(type: string): EventType {
+  const mapping: Record<string, EventType> = {
+    STUDY: EventType.STUDY_SESSION,
+    HOMEWORK: EventType.ASSIGNMENT,
+    EXAM_PREP: EventType.EXAM,
+    BREAK: EventType.BREAK,
+    BUFFER: EventType.OTHER,
   };
-  return mapping[type] || "OTHER";
+  return mapping[type] || EventType.OTHER;
 }
