@@ -80,7 +80,30 @@ export function ChatInterface() {
           if (done) break;
 
           const chunk = decoder.decode(value);
-          fullContent += chunk;
+
+          // Handle different streaming formats
+          if (chunk.includes('{"textDelta"')) {
+            // AI SDK format: {"textDelta":{"textDelta":"chunk"}}
+            try {
+              const jsonMatch = chunk.match(/\{"textDelta":\{"textDelta":"([^"]*?)"\}\}/);
+              if (jsonMatch) {
+                fullContent += jsonMatch[1];
+              }
+            } catch {
+              fullContent += chunk;
+            }
+          } else if (chunk.startsWith("0:")) {
+            // SSE format
+            try {
+              const text = JSON.parse(chunk.slice(2));
+              fullContent += text;
+            } catch {
+              fullContent += chunk.slice(2);
+            }
+          } else {
+            // Raw text streaming
+            fullContent += chunk;
+          }
 
           setMessages((prev) =>
             prev.map((m) =>

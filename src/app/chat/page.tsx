@@ -46,6 +46,24 @@ const quickActions = [
   },
 ];
 
+const scheduleActions = [
+  {
+    label: "Adjust my schedule",
+    icon: Calendar,
+    prompt: "I want to modify my AI-generated study schedule. Show me my current schedule blocks and help me adjust them.",
+  },
+  {
+    label: "Move study time",
+    icon: Clock,
+    prompt: "I need to move my study blocks to different times. What schedule blocks do I have and when would work better?",
+  },
+  {
+    label: "Add more breaks",
+    icon: Sparkles,
+    prompt: "I need more breaks in my schedule. Can you add some break time between my study sessions?",
+  },
+];
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -108,7 +126,17 @@ What would you like help with today?`,
           content: m.content,
         }));
 
-      const response = await fetch("/api/chat", {
+      // Detect schedule-related conversations
+      const scheduleKeywords = ["schedule", "study time", "break", "move", "adjust", "change time", "add block", "remove"];
+      const isScheduleConversation = scheduleKeywords.some(keyword =>
+        messageText.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      // Use enhanced chat for schedule conversations
+      const endpoint = isScheduleConversation ? "/api/chat/enhanced" : "/api/chat";
+      console.log("Using", endpoint, "for message:", messageText);
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: chatHistory }),
@@ -127,17 +155,31 @@ What would you like help with today?`,
           if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
-          // Parse SSE data chunks from AI SDK
-          const lines = chunk.split("\n");
-          for (const line of lines) {
-            if (line.startsWith("0:")) {
-              try {
-                const text = JSON.parse(line.slice(2));
-                fullContent += text;
-              } catch {
-                fullContent += line.slice(2);
+          console.log("Received chunk:", JSON.stringify(chunk)); // Debug log
+
+          // Handle different streaming formats
+          if (chunk.includes('{"textDelta"')) {
+            // AI SDK format: {"textDelta":{"textDelta":"chunk"}}
+            try {
+              const jsonMatch = chunk.match(/\{"textDelta":\{"textDelta":"([^"]*?)"\}\}/);
+              if (jsonMatch) {
+                fullContent += jsonMatch[1];
               }
+            } catch {
+              // Fallback: just add the raw chunk
+              fullContent += chunk;
             }
+          } else if (chunk.startsWith("0:")) {
+            // SSE format from AI SDK
+            try {
+              const text = JSON.parse(chunk.slice(2));
+              fullContent += text;
+            } catch {
+              fullContent += chunk.slice(2);
+            }
+          } else {
+            // Raw text streaming
+            fullContent += chunk;
           }
 
           setMessages((prev) =>
@@ -208,19 +250,37 @@ What would you like help with today?`,
 
       {/* Quick Actions */}
       {messages.length <= 1 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          {quickActions.map((action) => (
-            <Card
-              key={action.label}
-              className="cursor-pointer hover:bg-accent transition-colors"
-              onClick={() => handleSend(action.prompt)}
-            >
-              <CardContent className="flex items-center gap-3 py-3 px-4">
-                <action.icon className="h-5 w-5 text-primary flex-shrink-0" />
-                <span className="text-sm font-medium">{action.label}</span>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-3 mb-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Quick Actions</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {quickActions.map((action) => (
+              <Card
+                key={action.label}
+                className="cursor-pointer hover:bg-accent transition-colors"
+                onClick={() => handleSend(action.prompt)}
+              >
+                <CardContent className="flex items-center gap-3 py-3 px-4">
+                  <action.icon className="h-5 w-5 text-primary flex-shrink-0" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <h3 className="text-sm font-medium text-muted-foreground mt-4">Schedule Adjustments</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {scheduleActions.map((action) => (
+              <Card
+                key={action.label}
+                className="cursor-pointer hover:bg-accent transition-colors border-dashed"
+                onClick={() => handleSend(action.prompt)}
+              >
+                <CardContent className="flex items-center gap-3 py-3 px-4">
+                  <action.icon className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 

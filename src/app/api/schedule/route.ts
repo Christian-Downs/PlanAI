@@ -6,6 +6,7 @@ import { generateUserSchedule, applyScheduleBlocks, analyzeUserTasks } from "@/l
 // GET /api/schedule - Generate a schedule suggestion
 export async function GET(req: NextRequest) {
   try {
+    console.log("Schedule API called");
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,9 +15,14 @@ export async function GET(req: NextRequest) {
     const userId = (session.user as any).id;
     const days = parseInt(req.nextUrl.searchParams.get("days") || "7");
 
+    console.log("Generating schedule for user:", userId, "for", days, "days");
+
     const schedule = await generateUserSchedule(userId, days);
+    console.log("Generated schedule:", JSON.stringify(schedule, null, 2));
+
     return NextResponse.json({ success: true, data: schedule });
   } catch (error: any) {
+    console.error("Schedule generation error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

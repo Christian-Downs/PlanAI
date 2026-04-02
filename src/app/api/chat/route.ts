@@ -7,23 +7,38 @@ import { format } from "date-fns";
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("Chat API called");
     const session = await getServerSession(authOptions);
     if (!session?.user) {
+      console.log("No session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    console.log("Session found:", session.user.email);
     const userId = (session.user as any).id;
     const body = await req.json();
     const { messages } = body;
+
+    console.log("Received messages:", messages?.length);
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Messages required" }, { status: 400 });
     }
 
+    // Check if OpenAI API key exists
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("No OpenAI API key found");
+      return NextResponse.json({ error: "AI service not configured" }, { status: 500 });
+    }
+
+    console.log("OpenAI API key exists");
+
     // Get user context
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
+
+    console.log("User found:", user?.email);
 
     // Get upcoming events
     const upcomingEvents = await prisma.calendarEvent.findMany({
@@ -35,6 +50,8 @@ export async function POST(req: NextRequest) {
       take: 10,
     });
 
+    console.log("Found", upcomingEvents.length, "upcoming events");
+
     // Get pending tasks
     const pendingTasks = await prisma.task.findMany({
       where: {
@@ -44,6 +61,8 @@ export async function POST(req: NextRequest) {
       orderBy: { dueDate: "asc" },
       take: 10,
     });
+
+    console.log("Found", pendingTasks.length, "pending tasks");
 
     const eventsStr = upcomingEvents
       .map(
@@ -71,6 +90,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    console.log("Creating chat stream...");
+
     // Stream response
     const result = createChatStream({
       messages,
@@ -83,9 +104,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Save assistant response (non-streaming for DB)
-    // The streaming happens via the response below
-
+    console.log("Chat stream created, returning response");
     return result.toTextStreamResponse();
   } catch (error: any) {
     console.error("Chat error:", error);

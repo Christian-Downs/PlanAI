@@ -78,6 +78,10 @@ model CalendarSource {
   type        CalendarType
   color       String           @default("#4285F4")
   enabled     Boolean          @default(true)
+
+  // Account identification
+  accountEmail    String?                     // Email of the connected account
+  accountId       String?                     // Provider-specific account ID
   
   // Connection details
   icalUrl     String?          @db.Text  // For ICS/iCal feeds

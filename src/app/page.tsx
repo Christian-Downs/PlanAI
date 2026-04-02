@@ -18,9 +18,10 @@ export default function LandingPage() {
   }, [status, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-12">
-      {/* Hero */}
-      <div className="text-center space-y-4 max-w-2xl">
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background overflow-y-auto">
+      <div className="flex flex-col items-center justify-center min-h-screen w-full space-y-12 px-4 sm:px-6 lg:px-8">
+        {/* Hero */}
+        <div className="text-center space-y-4 max-w-2xl">
         <div className="flex items-center justify-center gap-3 mb-6">
           <Calendar className="h-12 w-12 text-primary" />
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
@@ -93,9 +94,14 @@ export default function LandingPage() {
             Privacy Policy
           </a>
           <span className="hidden sm:inline">•</span>
+          <a href="/terms-of-service.html" className="hover:text-foreground transition-colors">
+            Terms of Service
+          </a>
+          <span className="hidden sm:inline">•</span>
           <span>© 2026 PlanAI. All rights reserved.</span>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

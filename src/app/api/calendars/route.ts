@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
         lastSyncAt: true,
         lastSyncStatus: true,
         lastSyncError: true,
+        accountEmail: true,
+        accountId: true,
         _count: { select: { events: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -59,11 +61,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Check for duplicate iCal feeds
+    if (type === "ICAL" && icalUrl) {
+      const existingIcal = await prisma.calendarSource.findFirst({
+        where: {
+          userId,
+          type: "ICAL",
+          icalUrl: icalUrl,
+        },
+      });
+
+      if (existingIcal) {
+        return NextResponse.json(
+          { success: false, error: "This iCal feed is already connected" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Generate smart name for iCal feeds if no custom name provided
+    let feedName = name;
+    if (type === "ICAL" && icalUrl && (!name || name === "iCal / ICS Feed")) {
+      try {
+        const url = new URL(icalUrl);
+        const domain = url.hostname.replace(/^www\./, '');
+
+        // Create a readable name from domain
+        const domainParts = domain.split('.');
+        if (domainParts.length > 1) {
+          const mainPart = domainParts[0];
+          feedName = `${mainPart.charAt(0).toUpperCase() + mainPart.slice(1)} Calendar`;
+        } else {
+          feedName = `${domain} Calendar`;
+        }
+      } catch {
+        // If URL parsing fails, use default name with timestamp
+        feedName = `iCal Feed ${new Date().toLocaleDateString()}`;
+      }
+    }
+
     // Create the calendar source
     const source = await prisma.calendarSource.create({
       data: {
         userId,
-        name,
+        name: feedName,
         type,
         color: color || "#4285F4",
         icalUrl: icalUrl || null,
@@ -71,6 +112,9 @@ export async function POST(req: NextRequest) {
         password: password || null, // TODO: Encrypt
         baseUrl: baseUrl || null,
         apiToken: apiToken || null, // TODO: Encrypt
+        // Add account identification for iCal feeds
+        accountEmail: type === "ICAL" ? icalUrl : null,
+        accountId: type === "ICAL" ? icalUrl : null,
       },
     });
 

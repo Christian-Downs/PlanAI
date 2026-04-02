@@ -29,6 +29,7 @@ export interface CalendarSourceConfig {
   requiresCredentials: boolean;
   requiresUrl: boolean;
   supportsWebhook: boolean;
+  disabled?: boolean; // For "coming soon" services
 }
 
 export const CALENDAR_SOURCES: CalendarSourceConfig[] = [
@@ -45,47 +46,51 @@ export const CALENDAR_SOURCES: CalendarSourceConfig[] = [
   },
   {
     type: "OUTLOOK",
-    name: "Outlook / Office 365",
+    name: "Microsoft Outlook",
     color: "#0078D4",
     icon: "outlook",
-    description: "Connect your Outlook or Office 365 calendar",
+    description: "Coming soon - Connect your Outlook calendar",
     requiresOAuth: true,
     requiresCredentials: false,
     requiresUrl: false,
     supportsWebhook: true,
+    disabled: true,
   },
   {
     type: "BLACKBOARD",
     name: "Blackboard",
     color: "#262626",
     icon: "blackboard",
-    description: "Import assignments and deadlines from Blackboard",
+    description: "Coming soon - Import assignments using iCal calendar export",
     requiresOAuth: false,
-    requiresCredentials: true,
+    requiresCredentials: false,
     requiresUrl: true,
     supportsWebhook: false,
+    disabled: true,
   },
   {
     type: "MOODLE",
     name: "Moodle",
     color: "#F98012",
     icon: "moodle",
-    description: "Import course events and deadlines from Moodle",
-    requiresOAuth: false,
-    requiresCredentials: true,
-    requiresUrl: true,
-    supportsWebhook: false,
-  },
-  {
-    type: "CANVAS",
-    name: "Canvas LMS",
-    color: "#E13F29",
-    icon: "canvas",
-    description: "Import assignments from Canvas using API token",
+    description: "Coming soon - Import course events using iCal calendar export",
     requiresOAuth: false,
     requiresCredentials: false,
     requiresUrl: true,
     supportsWebhook: false,
+    disabled: true,
+  },
+  {
+    type: "CANVAS",
+    name: "Canvas",
+    color: "#E13C2B",
+    icon: "canvas",
+    description: "Coming soon - Connect your Canvas courses",
+    requiresOAuth: false,
+    requiresCredentials: true,
+    requiresUrl: true,
+    supportsWebhook: false,
+    disabled: true,
   },
   {
     type: "ICAL",

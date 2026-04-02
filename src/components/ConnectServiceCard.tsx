@@ -39,6 +39,7 @@ interface ConnectServiceCardProps {
   source: CalendarSourceConfig;
   connected?: boolean;
   lastSync?: string;
+  accountCount?: number; // Number of connected accounts
   onConnect: (data: {
     type: string;
     name: string;
@@ -55,21 +56,27 @@ export function ConnectServiceCard({
   source,
   connected = false,
   lastSync,
+  accountCount = 0,
   onConnect,
   onDisconnect,
 }: ConnectServiceCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     icalUrl: "",
     username: "",
     password: "",
     baseUrl: "",
     apiToken: "",
+    name: "", // For custom feed names
   });
+
+  const isDisabled = source.disabled;
 
   const handleConnect = async () => {
     setLoading(true);
+    setError(null);
     try {
       if (source.requiresOAuth) {
         // Trigger OAuth flow
@@ -78,9 +85,33 @@ export function ConnectServiceCard({
           name: source.name,
         });
       } else {
+        // For non-OAuth sources, test connection first
+        const connectionData = {
+          type: source.type,
+          icalUrl: formData.icalUrl || undefined,
+          username: formData.username || undefined,
+          password: formData.password || undefined,
+          baseUrl: formData.baseUrl || undefined,
+          apiToken: formData.apiToken || undefined,
+        };
+
+        // Test the connection
+        const testResponse = await fetch("/api/calendars/test-connection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(connectionData),
+        });
+
+        const testResult = await testResponse.json();
+
+        if (!testResult.success) {
+          throw new Error(testResult.error || "Connection test failed");
+        }
+
+        // If test passed, proceed with actual connection
         await onConnect({
           type: source.type,
-          name: source.name,
+          name: formData.name || source.name, // Use custom name if provided
           icalUrl: formData.icalUrl || undefined,
           username: formData.username || undefined,
           password: formData.password || undefined,
@@ -89,15 +120,24 @@ export function ConnectServiceCard({
         });
       }
       setDialogOpen(false);
+      setFormData({
+        icalUrl: "",
+        username: "",
+        password: "",
+        baseUrl: "",
+        apiToken: "",
+        name: "",
+      });
     } catch (error) {
       console.error("Failed to connect:", error);
+      setError((error as Error).message || "Failed to connect. Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className={`relative overflow-hidden ${isDisabled ? 'opacity-75' : ''}`}>
       {/* Color bar */}
       <div
         className="absolute top-0 left-0 right-0 h-1"
@@ -119,7 +159,13 @@ export function ConnectServiceCard({
                 {connected ? (
                   <span className="flex items-center gap-1 text-green-600">
                     <CheckCircle className="h-3 w-3" />
-                    Connected{lastSync ? ` · Synced ${lastSync}` : ""}
+                    {accountCount > 1 ? `${accountCount} accounts connected` : "Connected"}
+                    {lastSync && ` · Synced ${lastSync}`}
+                  </span>
+                ) : isDisabled ? (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <AlertCircle className="h-3 w-3" />
+                    {source.description}
                   </span>
                 ) : (
                   source.description
@@ -132,7 +178,115 @@ export function ConnectServiceCard({
 
       <CardContent>
         <div className="flex gap-2">
-          {connected ? (
+          {isDisabled ? (
+            // Disabled state - show "Coming Soon" button
+            <Button
+              size="sm"
+              className="w-full opacity-50 cursor-not-allowed"
+              style={{ backgroundColor: source.color }}
+              disabled
+            >
+              Coming Soon
+            </Button>
+          ) : connected && (source.requiresOAuth || source.type === "ICAL") ? (
+            // For OAuth providers and iCal, show "Add Another Account" button
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) {
+                  setError(null);
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline" className="w-full">
+                  {source.type === "ICAL" ? "Add Another Feed" : "Add Another Account"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {source.type === "ICAL"
+                      ? `Add Another ${source.name} Feed`
+                      : `Add Another ${source.name} Account`
+                    }
+                  </DialogTitle>
+                  <DialogDescription>
+                    {source.type === "ICAL"
+                      ? "Connect an additional calendar feed to sync more events."
+                      : `Connect an additional ${source.name} account to sync more calendars.`
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+
+                {!source.requiresOAuth && (
+                  <div className="space-y-4 py-4">
+                    {/* Error message */}
+                    {error && (
+                      <div className="p-3 rounded-md bg-red-50 border border-red-200">
+                        <p className="text-sm text-red-600">{error}</p>
+                      </div>
+                    )}
+
+                    {/* Feed Name for iCal */}
+                    {source.type === "ICAL" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Feed Name</label>
+                        <Input
+                          placeholder="e.g., Work Calendar, School Events"
+                          value={formData.name || ""}
+                          onChange={(e) =>
+                            setFormData((f) => ({ ...f, name: e.target.value }))
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Optional: Give this feed a custom name to identify it easily
+                        </p>
+                      </div>
+                    )}
+
+                    {source.requiresUrl && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {source.type === "ICAL" ? "iCal/ICS URL" : "Base URL"}
+                        </label>
+                        <Input
+                          placeholder={
+                            source.type === "ICAL"
+                              ? "https://example.com/calendar.ics"
+                              : `https://your-school.${source.type.toLowerCase()}.com`
+                          }
+                          value={formData.baseUrl || formData.icalUrl}
+                          onChange={(e) =>
+                            setFormData((f) => ({
+                              ...f,
+                              [source.type === "ICAL" ? "icalUrl" : "baseUrl"]: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button
+                    onClick={handleConnect}
+                    disabled={loading}
+                    style={{ backgroundColor: source.color }}
+                  >
+                    {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {loading
+                      ? (source.requiresOAuth ? "Signing In..." : "Testing Connection...")
+                      : (source.requiresOAuth ? "Sign In with Another Account" : "Connect Feed")
+                    }
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          ) : connected && !source.requiresOAuth && source.type !== "ICAL" ? (
+            // For non-OAuth providers (except iCal), still show traditional controls
             <>
               <Button size="sm" variant="outline" className="flex-1">
                 Sync Now
@@ -146,7 +300,16 @@ export function ConnectServiceCard({
               </Button>
             </>
           ) : (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            // Not connected - show connect button
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) {
+                  setError(null);
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button size="sm" className="w-full" style={{ backgroundColor: source.color }}>
                   Connect
@@ -164,6 +327,30 @@ export function ConnectServiceCard({
 
                 {!source.requiresOAuth && (
                   <div className="space-y-4 py-4">
+                    {/* Error message */}
+                    {error && (
+                      <div className="p-3 rounded-md bg-red-50 border border-red-200">
+                        <p className="text-sm text-red-600">{error}</p>
+                      </div>
+                    )}
+
+                    {/* Feed Name for iCal */}
+                    {source.type === "ICAL" && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Feed Name (Optional)</label>
+                        <Input
+                          placeholder="e.g., Work Calendar, School Events"
+                          value={formData.name || ""}
+                          onChange={(e) =>
+                            setFormData((f) => ({ ...f, name: e.target.value }))
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Give this feed a custom name to identify it easily
+                        </p>
+                      </div>
+                    )}
+
                     {source.requiresUrl && (
                       <div className="space-y-2">
                         <label className="text-sm font-medium">
@@ -245,7 +432,10 @@ export function ConnectServiceCard({
                     style={{ backgroundColor: source.color }}
                   >
                     {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {source.requiresOAuth ? "Sign In" : "Connect"}
+                    {loading
+                      ? (source.requiresOAuth ? "Signing In..." : "Testing Connection...")
+                      : (source.requiresOAuth ? "Sign In" : "Connect")
+                    }
                   </Button>
                 </DialogFooter>
               </DialogContent>
