@@ -22,7 +22,7 @@ export function ChatInterface() {
       id: "welcome",
       role: "assistant",
       content:
-        "Hi! I'm your CalCondensor AI assistant. I can help you manage your schedule, estimate task complexity, suggest study times, and more. What would you like help with?",
+        "Hi! I'm your PlanAI assistant. I can help you manage your schedule, estimate task complexity, suggest study times, and more. What would you like help with?",
     },
   ]);
   const [input, setInput] = useState("");

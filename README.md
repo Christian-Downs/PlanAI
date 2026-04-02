@@ -1,4 +1,4 @@
-# Calendar Condensor
+# PlanAI
 
 Consolidate all your calendars into one smart, AI-powered schedule.
 
@@ -38,7 +38,7 @@ Consolidate all your calendars into one smart, AI-powered schedule.
 
 1. **Clone and install**:
    ```bash
-   cd CalandarCondensor
+   cd PlanAI
    npm install
    ```
 

@@ -1,16 +1,16 @@
 # Privacy Policy
 
-**Calendar Condensor**
+**PlanAI**
 Last updated: April 1, 2026
 
 ## 1. Introduction
 
-Calendar Condensor ("we," "us," "our," or "Company") operates the Calendar Condensor application (the "App"). This Privacy Policy explains how we collect, use, disclose, and otherwise handle your information when you use our App.
+PlanAI ("we," "us," "our," or "Company") operates the PlanAI application (the "App"). This Privacy Policy explains how we collect, use, disclose, and otherwise handle your information when you use our App.
 
 ## 2. Information We Collect
 
 ### 2.1 Calendar Data
-When you authorize Calendar Condensor to access your calendars, we collect:
+When you authorize PlanAI to access your calendars, we collect:
 - Calendar event titles, descriptions, and dates
 - Event start and end times
 - Event locations
@@ -73,7 +73,7 @@ We do **not** sell, trade, or rent your information to third parties. Your data 
 ## 6. Third-Party Services
 
 ### 6.1 Google Calendar
-Calendar Condensor uses Google Calendar API to read (not modify) your calendar events. Google's privacy policy applies to data Google collects: https://policies.google.com/privacy
+PlanAI uses Google Calendar API to read (not modify) your calendar events. Google's privacy policy applies to data Google collects: https://policies.google.com/privacy
 
 ### 6.2 OpenAI
 We send your task information and calendar data to OpenAI's API for schedule optimization. OpenAI's privacy policy applies: https://openai.com/privacy
@@ -120,7 +120,7 @@ You can disable cookies in your browser settings, though this may limit App func
 
 ## 10. Children's Privacy
 
-Calendar Condensor is not intended for users under 13. We do not knowingly collect information from children under 13. If we become aware of such collection, we will delete it immediately.
+PlanAI is not intended for users under 13. We do not knowingly collect information from children under 13. If we become aware of such collection, we will delete it immediately.
 
 ## 11. Changes to This Privacy Policy
 
@@ -130,17 +130,17 @@ We may update this Privacy Policy at any time. We will notify you of significant
 
 If you have questions about this Privacy Policy or our privacy practices:
 
-**Email**: privacy@calendarcondensor.com
+**Email**: privacy@planai.live
 
 **Address**:
-Calendar Condensor
+PlanAI
 [Your Address/Location]
 
 **Response Time**: We aim to respond to privacy inquiries within 30 days.
 
 ## 13. Your Consent
 
-By using Calendar Condensor, you consent to our Privacy Policy.
+By using PlanAI, you consent to our Privacy Policy.
 
 ---
 

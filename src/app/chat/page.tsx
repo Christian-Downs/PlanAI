@@ -51,7 +51,7 @@ export default function ChatPage() {
     {
       id: "welcome",
       role: "assistant",
-      content: `Welcome to CalCondensor AI! 👋
+      content: `Welcome to PlanAI! 👋
 
 I'm your intelligent scheduling assistant. I can help you with:
 
