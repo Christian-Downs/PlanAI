@@ -1,6 +1,6 @@
 {
-  "name": "Calendar Condensor",
-  "short_name": "CalCondensor",
+  "name": "PlanAI",
+  "short_name": "PlanAI",
   "description": "Consolidate all your calendars into one smart schedule",
   "start_url": "/dashboard",
   "display": "standalone",

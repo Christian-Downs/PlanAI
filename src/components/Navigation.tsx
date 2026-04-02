@@ -40,7 +40,7 @@ export function Navigation() {
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b bg-background px-4 py-3 md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Calendar className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg">CalCondensor</span>
+          <span className="font-bold text-lg">PlanAI</span>
         </Link>
         <Button
           variant="ghost"
@@ -68,7 +68,7 @@ export function Navigation() {
       >
         <div className="flex items-center gap-2 p-4 pt-16">
           <Calendar className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg">CalCondensor</span>
+          <span className="font-bold text-lg">PlanAI</span>
         </div>
         <nav className="flex flex-col gap-1 p-2">
           {navItems.map((item) => (
@@ -116,7 +116,7 @@ export function Navigation() {
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-background px-4 py-6">
           <Link href="/dashboard" className="flex items-center gap-2 px-2">
             <Calendar className="h-7 w-7 text-primary" />
-            <span className="font-bold text-xl">CalCondensor</span>
+            <span className="font-bold text-xl">PlanAI</span>
           </Link>
           <nav className="flex flex-1 flex-col gap-1">
             {navItems.map((item) => (
@@ -161,7 +161,7 @@ export function Navigation() {
               Sign Out
             </Button>
             <p className="px-3 text-xs text-muted-foreground">
-              Calendar Condensor v0.1
+              PlanAI v0.1
             </p>
           </div>
         </div>

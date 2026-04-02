@@ -9,14 +9,14 @@ import { AuthGuard } from "@/components/AuthGuard";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Calendar Condensor",
+  title: "PlanAI",
   description:
     "Consolidate all your calendars into one smart schedule. AI-powered scheduling for students and professionals.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "CalCondensor",
+    title: "PlanAI",
   },
 };
 

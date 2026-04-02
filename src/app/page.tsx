@@ -24,7 +24,7 @@ export default function LandingPage() {
         <div className="flex items-center justify-center gap-3 mb-6">
           <Calendar className="h-12 w-12 text-primary" />
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            Calendar Condensor
+            PlanAI
           </h1>
         </div>
         <p className="text-xl text-muted-foreground">
@@ -85,6 +85,17 @@ export default function LandingPage() {
           <Step number={3} title="Optimize" description="Get a smart schedule with study blocks, breaks, and task prioritization." />
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="mt-16 pt-8 border-t border-border">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm text-muted-foreground">
+          <a href="/privacy-policy.html" className="hover:text-foreground transition-colors">
+            Privacy Policy
+          </a>
+          <span className="hidden sm:inline">•</span>
+          <span>© 2026 PlanAI. All rights reserved.</span>
+        </div>
+      </footer>
     </div>
   );
 }
